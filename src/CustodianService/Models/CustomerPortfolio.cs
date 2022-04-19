@@ -2,19 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CustodianService.Models.EventSource;
 
 namespace CustodianService.Models
 {
     public class CustomerPortfolio
     {
+        public CustomerPortfolio(string cdsIdentifier)
+        {
+            Id= Guid.NewGuid();
+            CdsIdentifier = cdsIdentifier;
+        }
         public Guid Id{get;set;}
         public string CdsIdentifier { get; set; }
 
         public decimal TotalHodings{get;set;}
         
-        public List<StockHolding> StockHoldings{get;set;}
-        public List<int> TreasuryBonds{get;set;}
+        public List<StockHolding> StockHoldings{get;set;} = new List<StockHolding>();
+        public List<int> TreasuryBonds{get;set;}= new List<int>();
+
+        public void BuildPortFolio(IList<CustomerSecurityTransaction> transactions)
+        {
+            StockHoldings = new List<StockHolding>();
+            TreasuryBonds = new List<int>();
+            foreach (var item in transactions)
+            {
+                Type t = Type.GetType(item.EventInstanceType);
+                ISecurityTransactionHandler handler = Activator.CreateInstance(t) as ISecurityTransactionHandler;
+                handler.Handle(this,item.Data);
+            }
+
+        }
     }
+    
 
     public class StockHolding
     {
